@@ -21,6 +21,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         configureSong()
         table.delegate = self
         table.dataSource = self
+        prepareNotification()
     }
     
     
@@ -66,4 +67,45 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         return 100
     }
     
+    
+    //MARK:- set Notification
+    func prepareNotification() {
+        
+        let random = Int(arc4random_uniform(UInt32(songs.count)))
+        let suggested = songs[random]
+        
+        let center = UNUserNotificationCenter.current()
+        let content = UNMutableNotificationContent()
+        content.title = "Time to chill!"
+        content.body = "Listen to \(suggested.name) by \(suggested.artistName) Now!!"
+        content.sound = .default
+        
+        
+        let dirURL = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+        let fileURL = dirURL.appendingPathComponent("suggested.png")
+        
+        if let image = UIImage(named: suggested.imageName as String){
+            try? image.pngData()?.write(to: fileURL)
+            if let songImage = try? UNNotificationAttachment(identifier: "songImage", url: fileURL, options: nil) {
+            content.attachments = [songImage]
+            }
+        }
+        
+        let notiDate = Calendar.current.dateComponents([.day, .month, .year, .hour, .minute, .second], from: Date().addingTimeInterval(10))
+        
+        let trigger = UNCalendarNotificationTrigger(dateMatching: notiDate, repeats: true)
+        // let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 20, repeats: false)
+        
+        let request = UNNotificationRequest(identifier: "reminder", content: content, trigger: trigger)
+        center.add(request) { (error) in
+            if error != nil {
+                print("error:\(error?.localizedDescription ?? "Error Local Notification" )")
+                
+                
+            }
+        }
+        
+    }
 }
+
+
